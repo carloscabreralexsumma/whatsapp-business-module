@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 
@@ -94,7 +95,6 @@ def registrar_tenant(
 
         registrar_plantillas(servicio)
     except Exception as e:  # noqa: BLE001
-        import logging
         logging.getLogger(__name__).warning("No se pudieron registrar plantillas: %s", e)
 
     token = crear_token(tenant_id)

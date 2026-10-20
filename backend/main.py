@@ -22,6 +22,7 @@ Variables de entorno:
 """
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -50,20 +51,23 @@ async def lifespan(app: FastAPI):
     # Crear tablas si hay DATABASE_URL
     db_ok = init_db()
     if db_ok:
-        print("Base de datos PostgreSQL inicializada.")
+        logging.getLogger(__name__).info("Base de datos PostgreSQL inicializada.")
     # Crear almacén (PostgreSQL o memoria)
     almacen = crear_almacen()
     servicio = ServicioWhatsApp(CONFIG_DEFAULT, almacen=almacen)
     try:
         registrar_plantillas(servicio)
     except Exception as e:  # noqa: BLE001
-        import logging
-
         logging.getLogger(__name__).warning("No se pudieron registrar plantillas: %s", e)
     inicializar_servicio(servicio)
-    print(f"WhatsApp Module iniciado. Tenant: {CONFIG_DEFAULT.tenant_id}, activado: {CONFIG_DEFAULT.activado()}, DB: {database_activada()}")
+    logging.getLogger(__name__).info(
+        "WhatsApp Module iniciado. Tenant: %s, activado: %s, DB: %s",
+        CONFIG_DEFAULT.tenant_id,
+        CONFIG_DEFAULT.activado(),
+        database_activada(),
+    )
     yield
-    print("WhatsApp Module detenido.")
+    logging.getLogger(__name__).info("WhatsApp Module detenido.")
 
 
 app = FastAPI(
@@ -88,10 +92,8 @@ app.include_router(whatsapp_router)
 app.include_router(auth_router)
 
 # Archivos estáticos del portal de administración
-import os as _os
-
-_admin_dir = _os.path.join(_os.path.dirname(__file__), "..", "frontend", "admin")
-if _os.path.isdir(_admin_dir):
+_admin_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "admin")
+if os.path.isdir(_admin_dir):
     app.mount("/admin", StaticFiles(directory=_admin_dir, html=True), name="admin")
 
 
@@ -99,7 +101,7 @@ if _os.path.isdir(_admin_dir):
 def root():
     """Redirige al portal de administración."""
     return FileResponse(
-        _os.path.join(_admin_dir, "index.html"),
+        os.path.join(_admin_dir, "index.html"),
         media_type="text/html",
     )
 
