@@ -1,0 +1,28 @@
+# Entorno y llaves
+.env
+*.env
+.envrc
+*.key
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Datos
+*.db
+*.sqlite
+*.dump
+
+# Varios
+*.log
+dist/
+*.egg-info/
+node_modules/

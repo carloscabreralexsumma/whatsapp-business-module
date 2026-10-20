@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Business Module — Portal de Administración</title>
+<style>
+  :root {
+    --verde: #25D366;
+    --verde-oscuro: #128C7E;
+    --azul: #075E54;
+    --gris: #f0f2f5;
+    --blanco: #ffffff;
+    --texto: #111b21;
+    --texto-suave: #667781;
+    --borde: #e9edef;
+    --rojo: #dc3545;
+    --amarillo: #ffc107;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gris); color: var(--texto); }
+  .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-card { background: var(--blanco); padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 360px; text-align: center; }
+  .login-card h1 { color: var(--verde-oscuro); margin-bottom: 8px; font-size: 24px; }
+  .login-card p { color: var(--texto-suave); margin-bottom: 24px; font-size: 14px; }
+  .login-card input { width: 100%; padding: 12px; border: 1px solid var(--borde); border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+  .login-card button { width: 100%; padding: 12px; background: var(--verde); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; }
+  .login-card button:hover { background: var(--verde-oscuro); }
+  .app { display: none; }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: var(--azul); color: white; padding: 20px 0; overflow-y: auto; }
+  .sidebar h2 { padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar nav a { display: block; padding: 12px 20px; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: rgba(255,255,255,0.1); color: white; }
+  .sidebar nav a .icon { margin-right: 8px; }
+  .main { margin-left: 240px; padding: 24px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .header h1 { font-size: 24px; color: var(--texto); }
+  .card { background: var(--blanco); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 18px; margin-bottom: 16px; color: var(--verde-oscuro); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat { background: var(--blanco); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .stat .number { font-size: 32px; font-weight: 700; color: var(--verde-oscuro); }
+  .stat .label { font-size: 13px; color: var(--texto-suave); margin-top: 4px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--texto-suave); }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--borde); border-radius: 8px; font-size: 14px; }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .btn-primary { background: var(--verde); color: white; }
+  .btn-primary:hover { background: var(--verde-oscuro); }
+  .btn-danger { background: var(--rojo); color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--borde); font-size: 14px; }
+  th { background: var(--gris); font-weight: 600; color: var(--texto-suave); }
+  .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-yellow { background: #fff3cd; color: #856404; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-gray { background: #e2e3e5; color: #383d41; }
+  .empty { text-align: center; padding: 40px; color: var(--texto-suave); }
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-size: 14px; z-index: 1000; display: none; }
+  .toast.success { background: var(--verde); }
+  .toast.error { background: var(--rojo); }
+  .hidden { display: none; }
+  .chat-bubble { max-width: 70%; padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+  .chat-bubble.out { background: #dcf8c6; margin-left: auto; }
+  .chat-bubble.in { background: var(--blanco); }
+  .chat-container { max-height: 400px; overflow-y: auto; padding: 16px; background: #e5ddd5; border-radius: 8px; }
+  .flex { display: flex; gap: 12px; align-items: center; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .mb-16 { margin-bottom: 16px; }
+  .mt-16 { margin-top: 16px; }
+  .text-suave { color: var(--texto-suave); font-size: 13px; }
+  .mono { font-family: monospace; font-size: 12px; background: var(--gris); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; position: relative; }
+    .main { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login">
+  <div class="login-card">
+    <h1>WhatsApp Business</h1>
+    <p>Portal de Administración</p>
+    <input type="password" id="api-key" placeholder="API Key o contraseña" />
+    <button onclick="login()">Entrar</button>
+    <p class="text-suave mt-16">Configura tus credenciales en el servidor para activar el módulo.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app">
+  <div class="sidebar">
+    <h2>WhatsApp Admin</h2>
+    <nav>
+      <a onclick="show('onboarding')" class="active" id="nav-onboarding"><span class="icon">🚀</span> Onboarding</a>
+      <a onclick="show('dashboard')" id="nav-dashboard"><span class="icon">📊</span> Dashboard</a>
+      <a onclick="show('config')" id="nav-config"><span class="icon">⚙️</span> Configuración</a>
+      <a onclick="show('templates')" id="nav-templates"><span class="icon">📋</span> Plantillas</a>
+      <a onclick="show('conversations')" id="nav-conversations"><span class="icon">💬</span> Conversaciones</a>
+      <a onclick="show('send')" id="nav-send"><span class="icon">📤</span> Enviar mensaje</a>
+      <a onclick="show('optin')" id="nav-optin"><span class="icon">✅</span> Consentimientos</a>
+      <a onclick="logout()" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);"><span class="icon">🚪</span> Salir</a>
+    </nav>
+  </div>
+  <div class="main">
+    <div class="header">
+      <h1 id="page-title">Dashboard</h1>
+      <div class="flex">
+        <span class="badge badge-gray" id="status-badge">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div id="onboarding" class="page">
+      <div class="card" style="max-width:600px;margin:0 auto">
+        <h2 style="text-align:center">🚀 Configura tu WhatsApp Business en 5 minutos</h2>
+        <p class="text-suave" style="text-align:center;margin-bottom:24px">Sigue estos pasos para activar tu módulo.</p>
+        <div id="onboarding-steps">
+          <div class="onboarding-step" id="step-1">
+            <h3>Paso 1: Crea tu cuenta de WhatsApp Business en Meta</h3>
+            <p class="text-suave mb-16">Si aún no tienes cuenta de WhatsApp Business:</p>
+            <ol style="padding-left:20px;line-height:2">
+              <li>Ve a <a href="https://business.facebook.com" target="_blank">business.facebook.com</a> y crea una cuenta de negocio.</li>
+              <li>Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> y crea una app de tipo "Business".</li>
+              <li>Agrega el producto "WhatsApp" a tu app.</li>
+              <li>En WhatsApp → Configuración, registra un número de teléfono.</li>
+            </ol>
+            <button class="btn btn-primary mt-16" onclick="nextStep(2)">Ya tengo mi cuenta →</button>
+          </div>
+          <div class="onboarding-step hidden" id="step-2">
+            <h3>Paso 2: Obtén tus credenciales</h3>
+            <p class="text-suave mb-16">En el panel de Meta (developers.facebook.com → tu app → WhatsApp → Configuración):</p>
+            <div class="form-group">
+              <label>Phone Number ID</label>
+              <input type="text" id="ob-phone-id" placeholder="123456789012345" />
+              <p class="text-suave">Lo encuentras en "WhatsApp → Configuración → Números de teléfono".</p>
+            </div>
+            <div class="form-group">
+              <label>Access Token</label>
+              <input type="password" id="ob-token" placeholder="EAAxxxxxxx..." />
+              <p class="text-suave">Lo encuentras en "WhatsApp → Configuración → Token de acceso temporal" (o genera uno permanente).</p>
+            </div>
+            <div class="form-group">
+              <label>Business Account ID</label>
+              <input type="text" id="ob-business-id" placeholder="123456789012345" />
+            </div>
+            <div class="form-group">
+              <label>Webhook Verify Token (invéntalo tú)</label>
+              <input type="text" id="ob-verify-token" placeholder="mi-token-secreto-123" />
+              <p class="text-suave">Este token lo usas para verificar el webhook en Meta. Puede ser cualquier texto.</p>
+            </div>
+            <div class="flex mt-16">
+              <button class="btn btn-primary" onclick="nextStep(3)">Siguiente →</button>
+              <button class="btn" onclick="nextStep(1)">← Atrás</button>
+            </div>
+          </div>
+          <div class="onboarding-step hidden" id="step-3">
+            <h3>Paso 3: Configura el webhook en Meta</h3>
+            <p class="text-suave mb-16">En el panel de Meta → WhatsApp → Configuración → Webhook:</p>
+            <div class="form-group">
+              <label>URL del Callback</label>
+              <div class="mono" id="ob-webhook-url">https://tu-servidor.com/api/v1/whatsapp/webhook</div>
+            </div>
+            <div class="form-group">
+              <label>Verify Token</label>
+              <div class="mono" id="ob-verify-display">mi-token-secreto-123</div>
+            </div>
+            <p class="text-suave mb-16">Suscríbete a estos eventos: <strong>messages</strong>, <strong>message_deliveries</strong>, <strong>message_reads</strong>.</p>
+            <div class="flex mt-16">
+              <button class="btn btn-primary" onclick="nextStep(4)">Ya configuré el webhook →</button>
+              <button class="btn" onclick="nextStep(2)">← Atrás</button>
+            </div>
+          </div>
+          <div class="onboarding-step hidden" id="step-4">
+            <h3>Paso 4: Envía tu primer mensaje de prueba</h3>
+            <p class="text-suave mb-16">Envía un mensaje de texto a un número de WhatsApp para verificar que todo funciona.</p>
+            <div class="form-group">
+              <label>Tu número de WhatsApp (formato: 573001234567)</label>
+              <input type="text" id="ob-test-phone" placeholder="573001234567" />
+            </div>
+            <div class="form-group">
+              <label>Mensaje</label>
+              <textarea id="ob-test-msg" placeholder="Hola! Este es un mensaje de prueba.">Hola! Este es un mensaje de prueba del módulo de WhatsApp.</textarea>
+            </div>
+            <div class="flex mt-16">
+              <button class="btn btn-primary" onclick="sendTestMessage()">Enviar mensaje de prueba</button>
+              <button class="btn" onclick="nextStep(5)">Saltar →</button>
+            </div>
+            <div id="ob-test-result" class="mt-16"></div>
+          </div>
+          <div class="onboarding-step hidden" id="step-5">
+            <h3>Paso 5: ¡Listo!</h3>
+            <p class="text-suave mb-16">Tu módulo de WhatsApp está configurado. Ahora puedes:</p>
+            <ul style="padding-left:20px;line-height:2">
+              <li>Enviar mensajes desde el portal o desde la API.</li>
+              <li>Ver conversaciones y responder.</li>
+              <li>Registrar consentimientos (opt-in).</li>
+              <li>Configurar plantillas aprobadas por Meta.</li>
+            </ul>
+            <div class="card" style="margin-top:16px">
+              <h3>Variables de entorno para producción</h3>
+              <p class="text-suave mb-8">Configura estas variables en tu servidor (Render, Railway, etc.):</p>
+              <pre class="mono" id="ob-env-vars" style="white-space:pre-wrap"></pre>
+            </div>
+            <button class="btn btn-primary mt-16" onclick="show('dashboard')">Ir al Dashboard →</button>
+          </div>
+        </div>
+        <div class="flex mt-16" style="justify-content:center">
+          <span class="text-suave">Paso <span id="step-num">1</span> de 5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="page">
+      <div class="stats" id="stats-grid">
+        <div class="stat"><div class="number" id="stat-contacts">-</div><div class="label">Contactos</div></div>
+        <div class="stat"><div class="number" id="stat-convs">-</div><div class="label">Conversaciones</div></div>
+        <div class="stat"><div class="number" id="stat-sent">-</div><div class="label">Enviados</div></div>
+        <div class="stat"><div class="number" id="stat-received">-</div><div class="label">Recibidos</div></div>
+      </div>
+      <div class="card">
+        <h2>Estado del módulo</h2>
+        <div id="module-status">Cargando...</div>
+      </div>
+      <div class="card">
+        <h2>Últimas conversaciones</h2>
+        <div id="recent-convs"><div class="empty">Sin conversaciones aún</div></div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="config" class="page hidden">
+      <div class="card">
+        <h2>Configuración del módulo</h2>
+        <p class="text-suave mb-16">Configura tu número de WhatsApp Business y las credenciales de la Cloud API de Meta.</p>
+        <div class="form-group">
+          <label>Nombre del negocio</label>
+          <input type="text" id="cfg-nombre" placeholder="Mi Negocio" />
+        </div>
+        <div class="form-group">
+          <label>Phone Number ID (Meta)</label>
+          <input type="text" id="cfg-phone-id" placeholder="123456789012345" />
+        </div>
+        <div class="form-group">
+          <label>Access Token (Meta)</label>
+          <input type="password" id="cfg-token" placeholder="EAAxxxxxxx..." />
+        </div>
+        <div class="form-group">
+          <label>Business Account ID</label>
+          <input type="text" id="cfg-business-id" placeholder="123456789012345" />
+        </div>
+        <div class="form-group">
+          <label>Webhook Verify Token</label>
+          <input type="text" id="cfg-verify-token" placeholder="mi-token-secreto" />
+        </div>
+        <div class="form-group">
+          <label>Nombre del remitente</label>
+          <input type="text" id="cfg-remitente" placeholder="Mi Negocio" />
+        </div>
+        <div class="form-group">
+          <label>Firma al final de los mensajes</label>
+          <input type="text" id="cfg-firma" placeholder="Mi Negocio — www.minegocio.com" />
+        </div>
+        <button class="btn btn-primary" onclick="saveConfig()">Guardar configuración</button>
+        <p class="text-suave mt-16">Las credenciales se configuran en el servidor (variables de entorno). Este formulario es para referencia.</p>
+      </div>
+      <div class="card">
+        <h2>URL del Webhook</h2>
+        <p class="text-suave mb-16">Configura esta URL en el panel de Meta (WhatsApp Business → Configuración → Webhook):</p>
+        <div class="mono" id="webhook-url">https://tu-servidor.com/api/v1/whatsapp/webhook</div>
+        <p class="text-suave mt-16">El Verify Token debe coincidir con el configurado arriba.</p>
+      </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div id="templates" class="page hidden">
+      <div class="card">
+        <h2>Plantillas de mensajes</h2>
+        <p class="text-suave mb-16">Las plantillas deben aprobarse en Meta antes de usarse para mensajes proactivos.</p>
+        <div id="templates-list"><div class="empty">Cargando plantillas...</div></div>
+      </div>
+    </div>
+
+    <!-- CONVERSATIONS -->
+    <div id="conversations" class="page hidden">
+      <div class="card">
+        <h2>Conversaciones</h2>
+        <div id="conversations-list"><div class="empty">Sin conversaciones aún</div></div>
+      </div>
+      <div class="card hidden" id="conversation-detail">
+        <h2>Historial de conversación</h2>
+        <div class="chat-container" id="chat-messages"></div>
+        <div class="flex mt-16">
+          <input type="text" id="reply-text" placeholder="Escribe un mensaje..." style="flex:1" />
+          <button class="btn btn-primary" onclick="sendReply()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEND -->
+    <div id="send" class="page hidden">
+      <div class="card">
+        <h2>Enviar mensaje</h2>
+        <div class="form-group">
+          <label>Teléfono (formato: 573001234567)</label>
+          <input type="text" id="send-phone" placeholder="573001234567" />
+        </div>
+        <div class="form-group">
+          <label>Tipo de mensaje</label>
+          <select id="send-type" onchange="toggleSendType()">
+            <option value="text">Texto libre</option>
+            <option value="template">Plantilla aprobada</option>
+            <option value="document">Documento (PDF)</option>
+          </select>
+        </div>
+        <div id="send-text-group" class="form-group">
+          <label>Mensaje</label>
+          <textarea id="send-text" placeholder="Escribe tu mensaje..."></textarea>
+        </div>
+        <div id="send-template-group" class="form-group hidden">
+          <label>Nombre de la plantilla</label>
+          <input type="text" id="send-template-name" placeholder="bienvenida" />
+          <label class="mt-16">Componentes (JSON, opcional)</label>
+          <textarea id="send-components" placeholder='[{"type":"body","parameters":[{"type":"text","text":"Juan"}]}]'></textarea>
+        </div>
+        <div id="send-document-group" class="hidden">
+          <div class="form-group">
+            <label>URL del documento</label>
+            <input type="text" id="send-doc-url" placeholder="https://ejemplo.com/documento.pdf" />
+          </div>
+          <div class="form-group">
+            <label>Nombre del archivo</label>
+            <input type="text" id="send-doc-name" placeholder="documento.pdf" />
+          </div>
+          <div class="form-group">
+            <label>Caption (opcional)</label>
+            <input type="text" id="send-doc-caption" placeholder="Aquí está tu documento" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nombre del contacto (opcional)</label>
+          <input type="text" id="send-name" placeholder="Juan" />
+        </div>
+        <button class="btn btn-primary" onclick="sendMessage()">Enviar</button>
+        <div id="send-result" class="mt-16"></div>
+      </div>
+    </div>
+
+    <!-- OPT-IN -->
+    <div id="optin" class="page hidden">
+      <div class="card">
+        <h2>Consentimientos (Opt-in)</h2>
+        <p class="text-suave mb-16">Ciudadanos que han dado su consentimiento para recibir mensajes.</p>
+        <div id="optin-list"><div class="empty">Sin consentimientos registrados</div></div>
+      </div>
+      <div class="card">
+        <h2>Registrar consentimiento manual</h2>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="optin-phone" placeholder="573001234567" />
+        </div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="optin-name" placeholder="Juan Pérez" />
+        </div>
+        <button class="btn btn-primary" onclick="registerOptin()">Registrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API = ''; // mismo origen
+let apiKey = localStorage.getItem('wa_api_key') || '';
+let currentPhone = '';
+
+function login() {
+  apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) { showToast('Ingresa una contraseña', 'error'); return; }
+  localStorage.setItem('wa_api_key', apiKey);
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadDashboard();
+}
+
+function logout() {
+  localStorage.removeItem('wa_api_key');
+  apiKey = '';
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function show(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById(page).classList.remove('hidden');
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('nav-' + page).classList.add('active');
+  const titles = { onboarding:'Onboarding', dashboard:'Dashboard', config:'Configuración', templates:'Plantillas', conversations:'Conversaciones', send:'Enviar mensaje', optin:'Consentimientos' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'templates') loadTemplates();
+  if (page === 'conversations') loadConversations();
+  if (page === 'optin') loadOptin();
+}
+
+function nextStep(step) {
+  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.add('hidden'));
+  document.getElementById('step-' + step).classList.remove('hidden');
+  document.getElementById('step-num').textContent = step;
+  if (step === 3) {
+    const verifyToken = document.getElementById('ob-verify-token').value.trim();
+    document.getElementById('ob-verify-display').textContent = verifyToken || 'mi-token-secreto-123';
+  }
+  if (step === 5) {
+    const phoneId = document.getElementById('ob-phone-id').value.trim();
+    const token = document.getElementById('ob-token').value.trim();
+    const businessId = document.getElementById('ob-business-id').value.trim();
+    const verifyToken = document.getElementById('ob-verify-token').value.trim();
+    const nombre = document.getElementById('cfg-nombre').value.trim() || 'Mi Negocio';
+    const remitente = document.getElementById('cfg-remitente').value.trim() || nombre;
+    const firma = document.getElementById('cfg-firma').value.trim() || nombre;
+    document.getElementById('ob-env-vars').textContent =
+      'WHATSAPP_PHONE_NUMBER_ID=' + phoneId + '\n' +
+      'WHATSAPP_ACCESS_TOKEN=' + token + '\n' +
+      'WHATSAPP_BUSINESS_ACCOUNT_ID=' + businessId + '\n' +
+      'WHATSAPP_WEBHOOK_VERIFY_TOKEN=' + verifyToken + '\n' +
+      'WHATSAPP_ENABLED=true\n' +
+      'WHATSAPP_NOMBRE_NEGOCIO=' + nombre + '\n' +
+      'WHATSAPP_NOMBRE_REMITENTE=' + remitente + '\n' +
+      'WHATSAPP_FIRMA=' + firma + '\n' +
+      'ENV=production';
+  }
+}
+
+async function sendTestMessage() {
+  const phone = document.getElementById('ob-test-phone').value.trim();
+  const msg = document.getElementById('ob-test-msg').value.trim();
+  if (!phone) { showToast('Ingresa un número de WhatsApp', 'error'); return; }
+  try {
+    const result = await api('/api/v1/whatsapp/enviar/texto?telefono=' + phone + '&texto=' + encodeURIComponent(msg), { method: 'POST' });
+    document.getElementById('ob-test-result').innerHTML = '<div class="card" style="background:#d4edda"><pre class="mono">' + JSON.stringify(result, null, 2) + '</pre></div>';
+    showToast(result.enviado ? 'Mensaje enviado ✅' : 'Error: ' + result.estado, result.enviado ? 'success' : 'error');
+  } catch (e) {
+    document.getElementById('ob-test-result').innerHTML = '<div class="card" style="background:#f8d7da;color:var(--rojo)">' + e.message + '</div>';
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...opts.headers }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Error ' + res.status);
+  }
+  return res.json();
+}
+
+async function loadDashboard() {
+  try {
+    const data = await api('/api/v1/whatsapp/estado');
+    document.getElementById('stat-contacts').textContent = data.estadisticas.contactos;
+    document.getElementById('stat-convs').textContent = data.estadisticas.conversaciones;
+    document.getElementById('stat-sent').textContent = data.estadisticas.mensajes_enviados;
+    document.getElementById('stat-received').textContent = data.estadisticas.mensajes_recibidos;
+    const badge = document.getElementById('status-badge');
+    badge.textContent = data.activado ? 'Activo' : 'Inactivo';
+    badge.className = 'badge ' + (data.activado ? 'badge-green' : 'badge-yellow');
+    document.getElementById('module-status').innerHTML = `
+      <p><strong>Tenant:</strong> ${data.tenant}</p>
+      <p><strong>Negocio:</strong> ${data.nombre_negocio}</p>
+      <p><strong>Estado:</strong> ${data.activado ? '✅ Activo' : '⚠️ Inactivo (faltan credenciales)'}</p>
+      <p><strong>Contactos:</strong> ${data.estadisticas.contactos}</p>
+      <p><strong>Conversaciones:</strong> ${data.estadisticas.conversaciones}</p>
+      <p><strong>Mensajes enviados:</strong> ${data.estadisticas.mensajes_enviados}</p>
+      <p><strong>Mensajes recibidos:</strong> ${data.estadisticas.mensajes_recibidos}</p>
+    `;
+    // Load recent conversations
+    const convs = await api('/api/v1/whatsapp/conversaciones');
+    if (convs.conversaciones.length === 0) {
+      document.getElementById('recent-convs').innerHTML = '<div class="empty">Sin conversaciones aún</div>';
+    } else {
+      let html = '<table><tr><th>Teléfono</th><th>Mensajes</th><th>Último mensaje</th></tr>';
+      convs.conversaciones.slice(0, 5).forEach(c => {
+        html += `<tr><td>${c.telefono}</td><td>${c.mensajes}</td><td>${c.ultimo_mensaje || '-'}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('recent-convs').innerHTML = html;
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function loadTemplates() {
+  try {
+    // Templates are stored locally; show the known ones
+    const templates = [
+      { name: 'insolvencia_bienvenida', category: 'UTILITY', status: 'APPROVED' },
+      { name: 'insolvencia_documento_listo', category: 'UTILITY', status: 'APPROVED' },
+      { name: 'insolvencia_recordatorio_documentos', category: 'UTILITY', status: 'APPROVED' },
+      { name: 'insolvencia_cita_centro', category: 'UTILITY', status: 'APPROVED' },
+      { name: 'insolvencia_acuerdo_logrado', category: 'UTILITY', status: 'APPROVED' },
+      { name: 'insolvencia_paquete_oferta', category: 'MARKETING', status: 'APPROVED' },
+      { name: 'insolvencia_paquete_entregado', category: 'UTILITY', status: 'APPROVED' },
+    ];
+    let html = '<table><tr><th>Nombre</th><th>Categoría</th><th>Estado</th></tr>';
+    templates.forEach(t => {
+      const badge = t.status === 'APPROVED' ? 'badge-green' : 'badge-yellow';
+      html += `<tr><td class="mono">${t.name}</td><td>${t.category}</td><td><span class="badge ${badge}">${t.status}</span></td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('templates-list').innerHTML = html;
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function loadConversations() {
+  try {
+    const data = await api('/api/v1/whatsapp/conversaciones');
+    if (data.conversaciones.length === 0) {
+      document.getElementById('conversations-list').innerHTML = '<div class="empty">Sin conversaciones aún</div>';
+      return;
+    }
+    let html = '<table><tr><th>Teléfono</th><th>Mensajes</th><th>Último mensaje</th><th>Acción</th></tr>';
+    data.conversaciones.forEach(c => {
+      html += `<tr><td>${c.telefono}</td><td>${c.mensajes}</td><td>${c.ultimo_mensaje || '-'}</td><td><button class="btn btn-sm btn-primary" onclick="viewConversation('${c.telefono}')">Ver</button></td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('conversations-list').innerHTML = html;
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function viewConversation(phone) {
+  currentPhone = phone;
+  try {
+    const data = await api('/api/v1/whatsapp/conversacion/' + phone);
+    const container = document.getElementById('chat-messages');
+    container.innerHTML = '';
+    data.mensajes.forEach(m => {
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + (m.direccion === 'outbound' ? 'out' : 'in');
+      bubble.innerHTML = `<div>${m.contenido}</div><div class="text-suave" style="font-size:10px;margin-top:4px">${m.fecha.substring(11,16)} · ${m.estado}</div>`;
+      container.appendChild(bubble);
+    });
+    container.scrollTop = container.scrollHeight;
+    document.getElementById('conversation-detail').classList.remove('hidden');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function sendReply() {
+  const text = document.getElementById('reply-text').value.trim();
+  if (!text || !currentPhone) return;
+  try {
+    await api('/api/v1/whatsapp/enviar/texto?telefono=' + currentPhone + '&texto=' + encodeURIComponent(text), { method: 'POST' });
+    document.getElementById('reply-text').value = '';
+    viewConversation(currentPhone);
+    showToast('Mensaje enviado', 'success');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function toggleSendType() {
+  const type = document.getElementById('send-type').value;
+  document.getElementById('send-text-group').classList.toggle('hidden', type !== 'text');
+  document.getElementById('send-template-group').classList.toggle('hidden', type !== 'template');
+  document.getElementById('send-document-group').classList.toggle('hidden', type !== 'document');
+}
+
+async function sendMessage() {
+  const phone = document.getElementById('send-phone').value.trim();
+  const name = document.getElementById('send-name').value.trim();
+  const type = document.getElementById('send-type').value;
+  if (!phone) { showToast('Ingresa un teléfono', 'error'); return; }
+  try {
+    let result;
+    if (type === 'text') {
+      const text = document.getElementById('send-text').value.trim();
+      if (!text) { showToast('Ingresa un mensaje', 'error'); return; }
+      result = await api('/api/v1/whatsapp/enviar/texto?telefono=' + phone + '&texto=' + encodeURIComponent(text) + '&nombre_contacto=' + encodeURIComponent(name), { method: 'POST' });
+    } else if (type === 'template') {
+      const tname = document.getElementById('send-template-name').value.trim();
+      const comps = document.getElementById('send-components').value.trim();
+      let url = '/api/v1/whatsapp/enviar/plantilla?telefono=' + phone + '&nombre_plantilla=' + encodeURIComponent(tname) + '&nombre_contacto=' + encodeURIComponent(name);
+      if (comps) url += '&componentes=' + encodeURIComponent(comps);
+      result = await api(url, { method: 'POST' });
+    } else if (type === 'document') {
+      const url = document.getElementById('send-doc-url').value.trim();
+      const fname = document.getElementById('send-doc-name').value.trim() || 'documento.pdf';
+      const caption = document.getElementById('send-doc-caption').value.trim();
+      let u = '/api/v1/whatsapp/enviar/documento?telefono=' + phone + '&url_documento=' + encodeURIComponent(url) + '&nombre_archivo=' + encodeURIComponent(fname) + '&nombre_contacto=' + encodeURIComponent(name);
+      if (caption) u += '&caption=' + encodeURIComponent(caption);
+      result = await api(u, { method: 'POST' });
+    }
+    document.getElementById('send-result').innerHTML = '<div class="card"><pre class="mono">' + JSON.stringify(result, null, 2) + '</pre></div>';
+    showToast(result.enviado ? 'Mensaje enviado' : 'Error: ' + result.estado, result.enviado ? 'success' : 'error');
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+    document.getElementById('send-result').innerHTML = '<div class="card" style="color:var(--rojo)">' + e.message + '</div>';
+  }
+}
+
+async function loadOptin() {
+  try {
+    const data = await api('/api/v1/whatsapp/conversaciones');
+    // Show contacts from conversations (simplified)
+    document.getElementById('optin-list').innerHTML = '<div class="empty">Los consentimientos se registran automáticamente cuando un ciudadano escribe al número de WhatsApp.</div>';
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+async function registerOptin() {
+  const phone = document.getElementById('optin-phone').value.trim();
+  const name = document.getElementById('optin-name').value.trim();
+  if (!phone) { showToast('Ingresa un teléfono', 'error'); return; }
+  try {
+    const result = await api('/api/v1/whatsapp/opt-in?telefono=' + phone + '&nombre=' + encodeURIComponent(name), { method: 'POST' });
+    showToast('Consentimiento registrado', 'success');
+    document.getElementById('optin-phone').value = '';
+    document.getElementById('optin-name').value = '';
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function saveConfig() {
+  showToast('La configuración se gestiona desde las variables de entorno del servidor. Edita el archivo .env o las variables de Render.', 'success');
+}
+
+// Auto-login if key exists
+if (apiKey) {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  // Check if module is activated; if not, show onboarding
+  fetch(API + '/api/v1/whatsapp/estado').then(r => r.json()).then(data => {
+    if (!data.activado) {
+      show('onboarding');
+    } else {
+      show('dashboard');
+    }
+  }).catch(() => show('dashboard'));
+}
+</script>
+</body>
+</html>
