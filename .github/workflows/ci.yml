@@ -39,4 +39,4 @@ jobs:
         env:
           PYTHONPATH: backend/src
           ENV: development
-        run: python -c "import main; print('Module OK')"
+        run: cd backend && python -c "import main; print('Module OK')"
