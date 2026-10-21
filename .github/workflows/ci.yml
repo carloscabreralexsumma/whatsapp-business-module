@@ -37,6 +37,7 @@ jobs:
 
       - name: Verify module starts
         env:
-          PYTHONPATH: backend/src
+          PYTHONPATH: src
           ENV: development
-        run: cd backend && python -c "import main; print('Module OK')"
+        working-directory: backend
+        run: python -c "import main; print('Module OK')"
