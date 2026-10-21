@@ -26,6 +26,11 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
 from comunicaciones.whatsapp.adaptadores.insolvencia import registrar_plantillas
 from comunicaciones.whatsapp.almacen import crear_almacen
 from comunicaciones.whatsapp.auth_router import router as auth_router
@@ -34,10 +39,6 @@ from comunicaciones.whatsapp.database import database_activada, init_db
 from comunicaciones.whatsapp.servicio import ServicioWhatsApp
 from comunicaciones.whatsapp.webhook import inicializar_servicio
 from comunicaciones.whatsapp.webhook import router as whatsapp_router
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 # ─── Configuración ───
 
@@ -92,7 +93,7 @@ app.include_router(whatsapp_router)
 app.include_router(auth_router)
 
 # Archivos estáticos del portal de administración
-_admin_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "admin")
+_admin_dir = os.path.join(os.path.dirname(__file__), "frontend", "admin")
 if os.path.isdir(_admin_dir):
     app.mount("/admin", StaticFiles(directory=_admin_dir, html=True), name="admin")
 

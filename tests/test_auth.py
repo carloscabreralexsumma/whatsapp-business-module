@@ -11,19 +11,12 @@ from __future__ import annotations
 
 import os
 
-import pytest
-
 from comunicaciones.whatsapp.auth import (
     crear_token,
-    login_tenant,
-    registrar_tenant,
     validar_token,
-    verificar_password,
 )
-from comunicaciones.whatsapp.almacen import AlmacenWhatsApp
 from comunicaciones.whatsapp.config import ConfigWhatsApp
 from comunicaciones.whatsapp.servicio import ServicioWhatsApp
-
 
 # ── Password ──
 
@@ -32,6 +25,7 @@ def test_verificar_password_correcta():
     os.environ["ADMIN_PASSWORD"] = "secreto123"
     # Re-import to pick up env
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     assert auth_mod.verificar_password("secreto123") is True
@@ -40,6 +34,7 @@ def test_verificar_password_correcta():
 def test_verificar_password_incorrecta():
     os.environ["ADMIN_PASSWORD"] = "secreto123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     assert auth_mod.verificar_password("otra") is False
@@ -64,7 +59,9 @@ def test_token_invalido():
 
 
 def test_token_expirado():
-    import json, time, hmac, hashlib
+    import json
+    import time
+
     from comunicaciones.whatsapp.auth import _firmar
     payload = json.dumps({"tenant_id": "t1", "usuario": "admin", "exp": int(time.time()) - 100})
     firma = _firmar(payload)
@@ -78,6 +75,7 @@ def test_token_expirado():
 def test_registrar_tenant_sin_credenciales():
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     resultado = auth_mod.registrar_tenant(
@@ -94,6 +92,7 @@ def test_registrar_tenant_sin_credenciales():
 def test_registrar_tenant_con_credenciales():
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     resultado = auth_mod.registrar_tenant(
@@ -109,6 +108,7 @@ def test_registrar_tenant_con_credenciales():
 def test_registrar_tenant_password_incorrecta():
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     # La función registrar_tenant no verifica password; eso lo hace el endpoint.
@@ -122,6 +122,7 @@ def test_registrar_tenant_password_incorrecta():
 def test_login_correcto():
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     resultado = auth_mod.login_tenant("mi-tenant", "admin123")
@@ -133,6 +134,7 @@ def test_login_correcto():
 def test_login_incorrecto():
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
     resultado = auth_mod.login_tenant("mi-tenant", "otra")
@@ -146,6 +148,7 @@ def test_flujo_onboarding_completo():
     """Simula el flujo completo: registrar → verificar token → enviar mensaje (sin creds)."""
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
 
@@ -174,6 +177,7 @@ def test_flujo_onboarding_con_credenciales():
     """Onboarding con credenciales → activado."""
     os.environ["ADMIN_PASSWORD"] = "admin123"
     import importlib
+
     import comunicaciones.whatsapp.auth as auth_mod
     importlib.reload(auth_mod)
 

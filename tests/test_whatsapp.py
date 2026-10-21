@@ -12,6 +12,7 @@ Prueban:
 from __future__ import annotations
 
 import pytest
+
 from comunicaciones.whatsapp.adaptadores.insolvencia import (
     PLANTILLAS_INSOLVENCIA,
     registrar_plantillas,

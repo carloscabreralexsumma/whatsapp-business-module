@@ -10,7 +10,7 @@ ignore = ["E501", "B008", "BLE001"]
 "tests/*" = ["T201"]
 
 [tool.pytest.ini_options]
-pythonpath = ["backend/src"]
+pythonpath = ["src"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]

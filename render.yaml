@@ -3,12 +3,12 @@ services:
     name: whatsapp-business-module
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENV
         value: production
       - key: PYTHONPATH
-        value: backend/src
+        value: src
       - key: WHATSAPP_ENABLED
         value: "false"
       - key: WHATSAPP_PHONE_NUMBER_ID

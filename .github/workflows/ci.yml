@@ -31,7 +31,7 @@ jobs:
 
       - name: Run tests
         env:
-          PYTHONPATH: backend/src
+          PYTHONPATH: src
           ENV: development
         run: pytest tests/ -q --tb=short
 
@@ -39,5 +39,4 @@ jobs:
         env:
           PYTHONPATH: src
           ENV: development
-        working-directory: backend
         run: python -c "import main; print('Module OK')"
